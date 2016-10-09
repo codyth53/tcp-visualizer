@@ -1,0 +1,29 @@
+<html>
+    <head>
+        <title>Hello World!</title>
+    </head>
+    <body>
+        <h1>Hello World!</h1>
+
+        <input type="file"/>
+
+        <h1 onclick="test()">Read me</h1>
+    </body>
+    <script>
+        function test() {
+            var fileInput = document.querySelector('input[type=file]');
+            var path = fileInput.value;
+
+            var fs = nw.require('fs');
+            fs.readFile(path, 'utf8', function (err, txt) {
+                if (err) {
+                    console.error(err);
+                    return;
+                }
+
+                console.log(txt);
+            });
+        }
+
+    </script>
+</html>

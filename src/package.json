@@ -1,0 +1,4 @@
+{
+  "name": "tcpvisualizer",
+  "main": "views/index.html"
+}
