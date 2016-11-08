@@ -6,7 +6,8 @@ var PCAPNG = (function (parent) {
 
     parent.headerTypes = {
         ETHERNET:1,
-        IP:2
+        IP:2,
+        TCP:3
     };
 
     parent.types = parent.types || {};
@@ -64,8 +65,39 @@ var PCAPNG = (function (parent) {
         datagram.DestIP = header[16].toString() + "." + header[17].toString() + "." + header[18].toString() + "." + header[19].toString();
 
         datagram.Payload = blob.slice(20);
+        datagram.TCP = parent.types.Tcp(datagram.Payload);
 
         return datagram;
+    };
+
+    parent.types.Tcp = function (blob) {
+        var segment = {};
+
+        segment.type = parent.headerTypes.TCP;
+
+        var header = new Uint8Array(blob.slice(0,20));
+
+        segment.SrcPort = (header[0]<<8) + header[1];
+        segment.DestPort = (header[2]<<8) + header[3];
+        segment.SeqNum = (header[4]<<24) + (header[5]<<16) + (header[6]<<8) + header[7];
+        segment.AckNum = (header[8]<<24) + (header[9]<<16) + (header[10]<<8) + header[11];
+        segment.DataOffset = header[12]>>4;
+        segment.NS = header[12]&1;
+        segment.CWR = header[13]>>7;
+        segment.ECE = (header[13]>>6)&1;
+        segment.URG = (header[13]>>5)&1;
+        segment.ACK = (header[13]>>4)&1;
+        segment.PSH = (header[13]>>3)&1;
+        segment.RST = (header[13]>>2)&1;
+        segment.SYN = (header[13]>>1)&1;
+        segment.FIN = header[13]&1;
+        segment.WindowSize = (header[14]<<8) + header[15];
+        segment.Checksum = (header[16]<<8) + header[17];
+        segment.Urgent = (header[18]<<8) + header[19];
+
+        segment.Payload = blob.slice(20);
+
+        return segment;
     };
 
     return parent;
