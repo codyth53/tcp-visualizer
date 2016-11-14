@@ -1,16 +1,28 @@
 <html>
 <head>
     <title>Hello World!</title>
+    <script src="../scripts/external/lokijs.min.js"></script>
     <script src="../scripts/pcapng-js/pcapng-js.js"></script>
     <script src="../scripts/pcapng-js/block-types.js"></script>
     <script src="../scripts/pcapng-js/headers.js"></script>
+    <script src="../scripts/PacketProcessing.js"></script>
 </head>
 <body>
 <h1>Hello World!</h1>
 
-<input type="file"/>
+<input type="file" id="fileSend" />
+<input type="file" id="fileReceive" />
 
-<h1 onclick="readPcap()">Read me</h1>
+<h1 onclick="main()">Read me</h1>
+
+<table>
+    <thead>
+    <tr><td>Src</td><td>Dst</td><td>Seq</td><td>ACK</td><td>time</td></tr>
+    </thead>
+    <tbody id="tbody">
+
+    </tbody>
+</table>
 </body>
 <script>
     function test() {
@@ -48,6 +60,48 @@
         //var file = new File(path);
         //var blocks = PCAPNG.processPcapng(fileInput.files[0]);
         //console.log(blocks.length);
+    }
+
+    var readySend = false;
+    var readyReceive = false;
+    function main() {
+        var sendFile = document.querySelector('#fileSend');
+        var receiveFile = document.querySelector('#fileReceive');
+
+        var fileReader = new FileReader();
+        fileReader.onload = function () {
+            var blocks = PCAPNG.processPcapng(this.result);
+            TV.importPackets(blocks, TV.sender);
+            readySend = true;
+        };
+        fileReader.readAsArrayBuffer(sendFile.files[0]);
+
+        fileReader = new FileReader();
+        fileReader.onload = function () {
+            var blocks = PCAPNG.processPcapng(this.result);
+            TV.importPackets(blocks, TV.receiver);
+            readyReceive = true;
+        };
+        fileReader.readAsArrayBuffer(receiveFile.files[0]);
+
+        run();
+    }
+
+    function run() {
+        if (!(readyReceive && readySend)) {
+            console.log("Not ready");
+            return setTimeout(run, 250);
+        }
+
+        var data = TV.db.getCollection(TV.receiver).data;
+        for (var i=0; i<data.length; i++) {
+            var table = document.getElementById('tbody');
+            table.insertAdjacentHTML('beforeend', "<tr><td>"+data[i].src+"</td><td>"+data[i].dest+"</td><td>"+data[i].seq+"</td><td>"+data[i].ack+"</td><td>"+data[i].time+"</td></tr>");
+        }
+
+        TV.matchPackets("10.0.0.28", "10.0.0.29");
+
+        console.log(TV.db.getCollection('pairs').count());
     }
 
 </script>

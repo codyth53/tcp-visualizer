@@ -31,7 +31,32 @@ var PCAPNG = (function (parent) {
     }
 
     parent.types.InterfaceDescription = function (blob) {
-        var type = parent.blockTypes.INTERFACEDESCRIPTION;
+        /*var packet = {};
+
+        var headers = new Uint32Array(blob.slice(0,16));
+
+        packet.type = parent.blockTypes.INTERFACEDESCRIPTION;
+        packet.length = headers[1];
+        packet.linktype = headers[2]>>>16;
+        packet.snaplen = headers[3];
+
+        if (packet.length > 16) {
+            var options = new Uint32Array(blob.slice(16,packet.length-4));
+
+            //looking specifically for if_tsresol
+            var index = 0;
+            while (index < options.length) {
+                var code = options[index]>>>16;
+                var length = options[index] & 65535;
+
+                if (code == 9) {
+                    packet.if_tsresol = options[index+1]>>>24;
+                }
+                index += ((length+1)>>>2);
+            }
+        }
+
+        return packet;*/
     };
 
     parent.types.Packet = function (blob) {
@@ -59,7 +84,7 @@ var PCAPNG = (function (parent) {
 
 
         packet.InterfaceId = header[0];
-        packet.Timestamp = header[1] * 2^32 + header[2];
+        packet.Timestamp = (header[1] & 1048575) * Math.pow(2,32) + header[2];
         packet.CapturedPacketLength = header[3];
         packet.PacketLength = header[4];
 
