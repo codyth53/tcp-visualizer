@@ -15,6 +15,7 @@ var TV = (function (parent) {
         for (var i=0; i<packets.length; i++) {
             if (packets[i].type == PCAPNG.blockTypes.ENHANCEDPACKET) {
                 collection.insert({
+                    id: i,
                     time: packets[i].Timestamp,
                     src: packets[i].Frame.IP.SrcIP,
                     dest: packets[i].Frame.IP.DestIP,
@@ -31,6 +32,14 @@ var TV = (function (parent) {
         var sendColl = parent.db.getCollection(parent.sender);
         var recColl = parent.db.getCollection(parent.receiver);
         var matchedColl = parent.db.addCollection('pairs');
+
+        //find time offset for receiver
+        var sender = sendColl.chain().simplesort('time');
+        var firstPacket = sender.copy().find({'src':{'$eq':sendIP}}).data()[0];
+        var secondPacket = sender.copy().find({'src':{'$eq':receiveIP}}).data()[0];
+        var averageTime = (firstPacket.time + secondPacket.time) / 2;
+        var otherPacket = recColl.chain().simplesort('time').find({'src':{'$eq':sendIP}}).data()[0];
+        var offsetTime = Math.round(averageTime - otherPacket.time);
 
         var sendSent = sendColl.chain().find({'src':{'$eq':sendIP}}).simplesort('time');
         var recRec = recColl.chain().find({'dest':{'$eq':receiveIP}}).simplesort('time');
@@ -51,7 +60,12 @@ var TV = (function (parent) {
                 fromip: sendSentData[i].src,
                 toip: sendSentData[i].dest,
                 senttime: sendSentData[i].time,
-                rectime: match[0].time
+                rectime: match[0].time + offsetTime,
+                sendertime: sendSentData[i].time,
+                sendid: sendSentData[i].id,
+                recid: match[0].id,
+                sender: sendSentData[i],
+                receiver: match[0]
             });
         }
 
@@ -68,8 +82,13 @@ var TV = (function (parent) {
             matchedColl.insert({
                 fromip: recSentData[i].src,
                 toip: recSentData[i].dest,
-                senttime: recSentData[i].time,
-                rectime: match[0].time
+                senttime: recSentData[i].time + offsetTime,
+                rectime: match[0].time,
+                sendertime: match[0].time,
+                sendid: match[0].id,
+                recid: recSentData[i].id,
+                sender: match[0],
+                receiver: recSentData[i]
             });
         }
     };

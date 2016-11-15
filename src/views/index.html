@@ -17,11 +17,11 @@
 
 <h1 onclick="main()">Read me</h1>
 
-<svg id="visualisation" width="500", height="500"></svg>
+<svg id="visualisation" width="1000", height="200"></svg>
 
 <table>
     <thead>
-    <tr><td>From</td><td>To</td><td>Sent</td><td>Rec</td></tr>
+    <tr><td>From</td><td>To</td><td>Sent</td><td>Rec</td><td>SendID</td><td>RecID</td></tr>
     </thead>
     <tbody id="tbody">
 
@@ -100,10 +100,12 @@
 
         TV.matchPackets("10.0.0.28", "10.0.0.29");
 
-        var data = TV.db.getCollection("pairs").chain().simplesort('senttime').limit(10).data();
+        var data = TV.db.getCollection("pairs").chain().simplesort('senttime')/*.limit(10)*/.data();
         for (var i=0; i<data.length; i++) {
             var table = document.getElementById('tbody');
-            table.insertAdjacentHTML('beforeend', "<tr><td>"+data[i].fromip+"</td><td>"+data[i].toip+"</td><td>"+data[i].senttime+"</td><td>"+data[i].rectime+"</td></tr>");
+            table.insertAdjacentHTML('beforeend', "<tr><td>"+data[i].fromip+"</td><td>"+data[i].toip+
+            "</td><td>"+data[i].senttime+"</td><td>"+data[i].rectime+"</td><td>"+data[i].sendid+"</td><td>"+data[i].recid+
+            "</td><td>"+data[i].sender.seq+"</td><td>"+data[i].sender.ack+"</td></tr>");
         }
 
         process10Packets("#visualisation", "10.0.0.28", "10.0.0.29");

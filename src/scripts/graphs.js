@@ -24,7 +24,7 @@ function generateLineGraph(data, container) {
 }
 
 function process10Packets(selector, sender, receiver) {
-    var packets = TV.db.getCollection('pairs').chain().simplesort('senttime').limit(10).data();
+    var packets = TV.db.getCollection('pairs').chain().simplesort('senttime')/*.limit(10)*/.data();
 
     var series = [];
     var min=Number.MAX_VALUE;
@@ -45,8 +45,8 @@ function process10Packets(selector, sender, receiver) {
     }
 
     var vis = d3.select(selector),
-        WIDTH = 500,
-        HEIGHT = 500,
+        WIDTH = 1000,
+        HEIGHT = 200,
         MARGINS = {
             top: 20,
             right: 20,
