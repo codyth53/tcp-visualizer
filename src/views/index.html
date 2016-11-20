@@ -97,9 +97,11 @@
             return setTimeout(run, 250);
         }
 
+        var srcIP = "10.0.0.26";
+        var dstIP = "10.0.0.35";
 
         TV.normalizeTime();
-        TV.matchPackets("10.0.0.26", "10.0.0.35");
+        TV.matchPackets(srcIP, dstIP);
 
         var data = TV.db.getCollection("pairs").chain().simplesort('sendertime')/*.limit(10)*/.data();
         for (var i=0; i<data.length; i++) {
@@ -109,7 +111,7 @@
             "</td><td>"+data[i].sender.seq+"</td><td>"+data[i].sender.ack+"</td></tr>");
         }
 
-        process10Packets("#visualisation", "10.0.0.26", "10.0.0.35");
+        process10Packets("#visualisation", srcIP, dstIP);
 
         console.log(TV.db.getCollection('pairs').count());
     }

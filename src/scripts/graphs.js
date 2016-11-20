@@ -30,10 +30,10 @@ function process10Packets(selector, sender, receiver) {
     var min=Number.MAX_VALUE;
     var max = 0;
     for (var i=0; i<packets.length; i++) {
-        var sendPos = (packets[i].fromip == sender)?0:1;
-        var recPos = (packets[i].fromip == sender)?1:0;
-        var senderTime = (packets[i].fromip == sender)?packets[i].senttime:packets[i].rectime;
-        var recerTime = (packets[i].fromip == sender)?packets[i].rectime:packets[i].senttime;
+        var sendPos = (packets[i].fromip === sender)?0:1;
+        var recPos = (packets[i].fromip === sender)?1:0;
+        var senderTime = (packets[i].fromip === sender)?packets[i].senttime:packets[i].rectime;
+        var recerTime = (packets[i].fromip === sender)?packets[i].rectime:packets[i].senttime;
         min = (min<packets[i].senttime)?min:packets[i].senttime;
         max = (max>packets[i].senttime)?max:packets[i].senttime;
         min = (min<packets[i].rectime)?min:packets[i].rectime;
@@ -67,6 +67,9 @@ function process10Packets(selector, sender, receiver) {
 
     var lineGen = d3.svg.line().x(function(d) {return xScale(d.x)}).y(function(d) {return yScale(d.y)});
     for (var i=0; i<series.length; i++) {
-        vis.append('svg:path').attr('d', lineGen(series[i])).attr('stroke-width', 2).attr('stroke', 'blue').attr('fill', 'none');
+        var color = 'blue';
+        if (series[i][0].y == 1)
+            color = 'red';
+        vis.append('svg:path').attr('d', lineGen(series[i])).attr('stroke-width', 2).attr('stroke', color).attr('fill', 'none');
     }
 }
