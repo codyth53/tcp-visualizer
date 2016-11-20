@@ -29,7 +29,7 @@ var TV = (function (parent) {
         }
     };
 
-    parent.normalizeTime = function() {
+    parent.normalizePackets = function(realSrc, realDst, otherSrc, otherDst) {
         var sendColl = parent.db.getCollection(parent.sender);
         var recColl = parent.db.getCollection(parent.receiver);
         var sender = sendColl.chain().simplesort('time').limit(3).data();
@@ -37,6 +37,8 @@ var TV = (function (parent) {
         var midSend = (sender[1].time + sender[2].time) / 2;
         var midRec = (recer[1].time + recer[2].time) / 2;
         var offset = Math.round(midSend - midRec);
+        var sendSeqOffset = sender[1].seq - recer[1].seq;
+        var recSeqOffset = sender[0].seq - recer[0].seq;
 
         var baseTime = Math.min(sendColl.min('time'), recColl.min('time') + offset);
         
@@ -52,6 +54,17 @@ var TV = (function (parent) {
             var item = recAll[i];
             item.time -= baseTime;
             item.time += offset;
+            if (item.src == otherSrc) {
+                item.src = realSrc;
+                item.dest = realDst;
+                item.seq += sendSeqOffset;
+                item.ack += recSeqOffset;
+            } else {
+                item.src = realDst;
+                item.dest = realSrc;
+                item.seq += recSeqOffset;
+                item.ack += sendSeqOffset;
+            }
             recColl.update(item);
         }
     }
@@ -60,14 +73,6 @@ var TV = (function (parent) {
         var sendColl = parent.db.getCollection(parent.sender);
         var recColl = parent.db.getCollection(parent.receiver);
         var matchedColl = parent.db.addCollection('pairs');
-
-        //find time offset for receiver
-        //var sender = sendColl.chain().simplesort('time');
-        //var firstPacket = sender.copy().find({'src':{'$eq':sendIP}}).data()[0];
-        //var secondPacket = sender.copy().find({'src':{'$eq':receiveIP}}).data()[1];
-        //var averageTime = (firstPacket.time + secondPacket.time) / 2;
-        //var otherPacket = recColl.chain().simplesort('time').find({'src':{'$eq':sendIP}}).data()[0];
-        //var offsetTime = Math.round(averageTime - otherPacket.time);
 
         var sendSent = sendColl.chain().find({'src':{'$eq':sendIP}}).simplesort('time');
         var recRec = recColl.chain().find({'dest':{'$eq':receiveIP}}).simplesort('time');
@@ -81,7 +86,7 @@ var TV = (function (parent) {
 
             var match = recRec.copy().find({'$and':[{'seq':{'$eq':seq}},{'ack':{'$eq':ack}},{'tcplen':{'$eq':tcplen}}]}).data();
             if (!match || match.length == 0) {
-                console.log("recRec packet " + i.toString() + " could not be matched");
+                console.log("sendSent packet " + i.toString() + " could not be matched");
                 continue;
             }
 
@@ -109,6 +114,10 @@ var TV = (function (parent) {
             var tcplen = recSentData[i].tcplen;
 
             var match = sendRec.copy().find({'$and':[{'seq':{'$eq':seq}},{'ack':{'$eq':ack}},{'tcplen':{'$eq':tcplen}}]}).data();
+            if (!match || match.length == 0) {
+                console.log("sendRec packet " + i.toString() + " could not be matched");
+                continue;
+            }
             matchedColl.insert({
                 fromip: recSentData[i].src,
                 toip: recSentData[i].dest,

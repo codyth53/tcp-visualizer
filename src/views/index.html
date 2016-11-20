@@ -11,7 +11,10 @@
 </head>
 <body>
 <h1>Hello World!</h1>
-
+<input type="text" id="senderSelf" value="10.0.0.21" />
+<input type="text" id="senderOther" value="130.160.143.212" />
+<input type="text" id="recSelf" value="10.112.4.172" />
+<input type="text" id="recOther" value="68.62.144.245" />
 <input type="file" id="fileSend" />
 <input type="file" id="fileReceive" />
 
@@ -97,10 +100,12 @@
             return setTimeout(run, 250);
         }
 
-        var srcIP = "10.0.0.26";
-        var dstIP = "10.0.0.35";
+        var srcIP = document.getElementById('senderSelf').value;
+        var dstIP = document.getElementById('senderOther').value;
+        var osrcIP = document.getElementById('recOther').value;
+        var odstIP = document.getElementById('recSelf').value;
 
-        TV.normalizeTime();
+        TV.normalizePackets(srcIP, dstIP, osrcIP, odstIP);
         TV.matchPackets(srcIP, dstIP);
 
         var data = TV.db.getCollection("pairs").chain().simplesort('sendertime')/*.limit(10)*/.data();

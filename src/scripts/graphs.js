@@ -24,7 +24,7 @@ function generateLineGraph(data, container) {
 }
 
 function process10Packets(selector, sender, receiver) {
-    var packets = TV.db.getCollection('pairs').chain().simplesort('sendertime').limit(100).data();
+    var packets = TV.db.getCollection('pairs').chain().simplesort('sendertime').data();
 
     var series = [];
     var min=Number.MAX_VALUE;
@@ -32,8 +32,8 @@ function process10Packets(selector, sender, receiver) {
     for (var i=0; i<packets.length; i++) {
         var sendPos = (packets[i].fromip === sender)?0:1;
         var recPos = (packets[i].fromip === sender)?1:0;
-        var senderTime = (packets[i].fromip === sender)?packets[i].senttime:packets[i].rectime;
-        var recerTime = (packets[i].fromip === sender)?packets[i].rectime:packets[i].senttime;
+        var senderTime = packets[i].senttime;
+        var recerTime = packets[i].rectime;
         min = (min<packets[i].senttime)?min:packets[i].senttime;
         max = (max>packets[i].senttime)?max:packets[i].senttime;
         min = (min<packets[i].rectime)?min:packets[i].rectime;
