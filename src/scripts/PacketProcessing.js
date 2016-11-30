@@ -73,6 +73,7 @@ var TV = (function (parent) {
         var sendColl = parent.db.getCollection(parent.sender);
         var recColl = parent.db.getCollection(parent.receiver);
         var matchedColl = parent.db.addCollection('pairs');
+        var lostColl = parent.db.addCollection('lost');
 
         var sendSent = sendColl.chain().find({'src':{'$eq':sendIP}}).simplesort('time');
         var recRec = recColl.chain().find({'dest':{'$eq':receiveIP}}).simplesort('time');
@@ -84,7 +85,7 @@ var TV = (function (parent) {
             var ack = sendSentData[i].ack;
             var tcplen = sendSentData[i].tcplen;
 
-            var match = recRec.copy().find({'$and':[{'seq':{'$eq':seq}},{'ack':{'$eq':ack}},{'tcplen':{'$eq':tcplen}}]}).data();
+            var match = recRec.copy().find({'$and':[{'seq':{'$eq':seq}},{'ack':{'$eq':ack}},{'tcplen':{'$eq':tcplen}},{'matched':{'$ne':true}}]}).data();
             if (!match || match.length == 0) {
                 console.log("sendSent packet " + i.toString() + " could not be matched");
                 continue;
@@ -101,6 +102,10 @@ var TV = (function (parent) {
                 sender: sendSentData[i],
                 receiver: match[0]
             });
+            sendSentData[i].matched = true;
+            sendColl.update(sendSentData[i]);
+            match[0].matched = true;
+            recColl.update(match[0]);
         }
 
         var recSent = recColl.chain().find({'src':{'$eq':receiveIP}}).simplesort('time');
@@ -113,7 +118,7 @@ var TV = (function (parent) {
             var ack = recSentData[i].ack;
             var tcplen = recSentData[i].tcplen;
 
-            var match = sendRec.copy().find({'$and':[{'seq':{'$eq':seq}},{'ack':{'$eq':ack}},{'tcplen':{'$eq':tcplen}}]}).data();
+            var match = sendRec.copy().find({'$and':[{'seq':{'$eq':seq}},{'ack':{'$eq':ack}},{'tcplen':{'$eq':tcplen}},{'matched':{'$ne':true}}]}).data();
             if (!match || match.length == 0) {
                 console.log("sendRec packet " + i.toString() + " could not be matched");
                 continue;
@@ -128,6 +133,50 @@ var TV = (function (parent) {
                 recid: recSentData[i].id,
                 sender: match[0],
                 receiver: recSentData[i]
+            });
+            recSentData[i].matched = true;
+            recColl.update(recSentData[i]);
+            match[0].matched = true;
+            sendColl.update(match[0]);
+        }
+
+        var senderMatched = matchedColl.chain().find({'fromip':{'$eq':sendIP}}).simplesort('sendertime');
+
+        var sendLost = sendColl.chain().find({'$and': [{'src':{'$eq':sendIP}},{'matched':{'$ne':true}}]}).simplesort('time');
+        var sendLostData = sendLost.data();
+        for (var i=0; i<sendLostData.length; i++) {
+            var nextMatched = senderMatched.copy().find({'senttime':{'$gt':sendLostData[i].time}}).data();
+            if (!nextMatched || nextMatched.length == 0) {
+                console.log("Error finding next success");
+                continue;
+            }
+            var averageTime = nextMatched[0].rectime - nextMatched[0].senttime;
+            lostColl.insert({
+                fromip: sendLostData[i].src,
+                senttime: sendLostData[i].time,
+                sendid: sendLostData[i].id,
+                sender: sendLostData[i],
+                halftime: Math.round(sendLostData[i].time + (averageTime/2))
+            });
+        }
+
+        var recMatched = matchedColl.chain().find({'fromip':{'$eq':receiveIP}}).simplesort('sendertime');
+
+        var recLost = recColl.chain().find({'$and': [{'src':{'$eq':sendIP}},{'matched':{'$ne':true}}]}).simplesort('time');
+        var recLostData = recLost.data();
+        for (var i=0; i<recLostData.length; i++) {
+            var nextMatched = recMatched.copy().find({'senttime':{'$gt':recLostData[i].time}}).data();
+            if (!nextMatched || nextMatched.length == 0) {
+                console.log("Error finding next success");
+                continue;
+            }
+            var averageTime = nextMatched[0].rectime - nextMatched[0].sendertime;
+            lostColl.insert({
+                fromip: recLostData[i].src,
+                senttime: recLostData[i].time,
+                sendid: recLostData[i].id,
+                sender: recLostData[i],
+                halftime: Math.round(recLostData[i].time + (averageTime/2))
             });
         }
     };

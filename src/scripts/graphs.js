@@ -46,6 +46,21 @@ function process10Packets(selector, sender, receiver) {
         ]);
     }
 
+    var lost = TV.db.getCollection('lost').chain().simplesort('sendertime').data();
+    console.log("There are " + lost.length + " lost packets");
+    for (var i=0; i<lost.length; i++) {
+        var sendPos = (lost[i].fromip === sender)?0:1;
+        var recPos = 0.5;
+        var senderTime = lost[i].senttime;
+        var recTime = lost[i].halftime;
+        series.push([
+            {"x":senderTime,
+            "y":sendPos},
+            {"x":recTime,
+            "y":recPos}
+        ]);
+    }
+
     var WIDTH = 1000,
         HEIGHT = 200,
         MARGINS = {
@@ -86,7 +101,8 @@ function process10Packets(selector, sender, receiver) {
         .attr("class", "line")
         .attr('stroke-width', 1)
         .attr('stroke', function(d,i){
-            return series[i][0].y==1?'red':'blue';
+            if (series[i][1].y == 0.5) return 'red';
+            return series[i][0].y==1?'green':'blue';
         })
         .attr('d', lineGen);
 
