@@ -79,7 +79,8 @@ var TV = (function (parent) {
         var recRec = recColl.chain().find({'dest':{'$eq':receiveIP}}).simplesort('time');
 
         var sendSentData = sendSent.data();
-        for (var i=0; i<sendSentData.length; i++) {
+        //for (var i=0; i<sendSentData.length; i++) {
+        for (var i=sendSentData.length-1; i>=0; i--) {
             var time = sendSentData[i].time;
             var seq = sendSentData[i].seq;
             var ack = sendSentData[i].ack;
@@ -113,6 +114,7 @@ var TV = (function (parent) {
 
         var recSentData = recSent.data();
         for (var i=0; i<recSentData.length; i++) {
+        //for (var i=recSentData.length-1; i>=0; i--) {
             var time = recSentData[i].time;
             var seq = recSentData[i].seq;
             var ack = recSentData[i].ack;
