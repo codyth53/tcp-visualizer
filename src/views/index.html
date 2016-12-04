@@ -16,10 +16,6 @@
 </head>
 <body>
 <h1>Hello World!</h1>
-<input type="text" id="senderSelf" value="10.0.0.21" />
-<input type="text" id="senderOther" value="130.160.143.212" />
-<input type="text" id="recSelf" value="10.112.5.51" /> <!--4.172-->
-<input type="text" id="recOther" value="68.62.144.245" />
 <input type="file" id="fileSend" />
 <input type="file" id="fileReceive" />
 
@@ -78,14 +74,23 @@
 
     var readySend = false;
     var readyReceive = false;
+    var srcIP = "";
+    var dstIP = "";
+    var osrcIP = "";
+    var odstIP = "";
     function main() {
+        readySend = false;
+        readyReceive = false;
+        TV.reset();
         var sendFile = document.querySelector('#fileSend');
         var receiveFile = document.querySelector('#fileReceive');
 
         var fileReader = new FileReader();
         fileReader.onload = function () {
             var blocks = PCAPNG.processPcapng(this.result);
-            TV.importPackets(blocks, TV.sender);
+            var ips = TV.importPackets(blocks, TV.sender);
+            srcIP = ips[1];
+            dstIP = ips[0];
             readySend = true;
         };
         fileReader.readAsArrayBuffer(sendFile.files[0]);
@@ -93,7 +98,9 @@
         fileReader = new FileReader();
         fileReader.onload = function () {
             var blocks = PCAPNG.processPcapng(this.result);
-            TV.importPackets(blocks, TV.receiver);
+            var ips = TV.importPackets(blocks, TV.receiver);
+            osrcIP = ips[1];
+            odstIP = ips[0];
             readyReceive = true;
         };
         fileReader.readAsArrayBuffer(receiveFile.files[0]);
@@ -107,10 +114,10 @@
             return setTimeout(run, 250);
         }
 
-        var srcIP = document.getElementById('senderSelf').value;
-        var dstIP = document.getElementById('senderOther').value;
-        var osrcIP = document.getElementById('recOther').value;
-        var odstIP = document.getElementById('recSelf').value;
+        //var srcIP = document.getElementById('senderSelf').value;
+        //var dstIP = document.getElementById('senderOther').value;
+        //var osrcIP = document.getElementById('recOther').value;
+        //var odstIP = document.getElementById('recSelf').value;
 
         TV.normalizePackets(srcIP, dstIP, osrcIP, odstIP);
         TV.matchPackets(srcIP, dstIP);

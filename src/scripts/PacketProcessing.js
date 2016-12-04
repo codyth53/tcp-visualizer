@@ -9,6 +9,10 @@ var TV = (function (parent) {
 
     parent.db = new loki('loki.json');
 
+    parent.reset = function() {
+        parent.db = new loki('loki.json');
+    }
+
     parent.importPackets = function(packets, name) {
         var collection = parent.db.addCollection(name);
 
@@ -27,6 +31,9 @@ var TV = (function (parent) {
                 });
             }
         }
+
+        var coll = parent.db.getCollection(name).chain().simplesort('time').limit(1).data();
+        return [coll[0].src, coll[0].dest];
     };
 
     parent.normalizePackets = function(realSrc, realDst, otherSrc, otherDst) {
