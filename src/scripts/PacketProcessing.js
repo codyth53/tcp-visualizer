@@ -41,11 +41,20 @@ var TV = (function (parent) {
         var recSeqOffset = sender[0].seq - recer[0].seq;
 
         var baseTime = Math.min(sendColl.min('time'), recColl.min('time') + offset);
+        var baseSendSeq = sender[1].seq;
+        var baseRecSeq = sender[0].seq;
         
         var sendAll = sendColl.data;
         for (var i=0; i<sendAll.length; i++) {
             var item = sendAll[i];
             item.time -= baseTime;
+            if (item.src == realSrc) {
+                item.seq -= baseSendSeq;
+                item.ack -= baseRecSeq;
+            } else {
+                item.seq -= baseRecSeq;
+                item.ack -= baseSendSeq;
+            }
             sendColl.update(item);
         }
 
@@ -57,13 +66,13 @@ var TV = (function (parent) {
             if (item.src == otherSrc) {
                 item.src = realSrc;
                 item.dest = realDst;
-                item.seq += sendSeqOffset;
-                item.ack += recSeqOffset;
+                item.seq += sendSeqOffset - baseSendSeq;
+                item.ack += recSeqOffset - baseRecSeq;
             } else {
                 item.src = realDst;
                 item.dest = realSrc;
-                item.seq += recSeqOffset;
-                item.ack += sendSeqOffset;
+                item.seq += recSeqOffset - baseRecSeq;
+                item.ack += sendSeqOffset - baseSendSeq;
             }
             recColl.update(item);
         }
@@ -74,6 +83,7 @@ var TV = (function (parent) {
         var recColl = parent.db.getCollection(parent.receiver);
         var matchedColl = parent.db.addCollection('pairs');
         var lostColl = parent.db.addCollection('lost');
+        var combineColl = parent.db.addCollection('combine');
 
         var sendSent = sendColl.chain().find({'src':{'$eq':sendIP}}).simplesort('time');
         var recRec = recColl.chain().find({'dest':{'$eq':receiveIP}}).simplesort('time');
@@ -181,6 +191,19 @@ var TV = (function (parent) {
                 halftime: Math.round(recLostData[i].time + (averageTime/2))
             });
         }
+
+        matchedColl.data.forEach(function(pair, i) {
+            combineColl.insert({
+                senttime: pair.senttime,
+                pair: pair
+            });
+        });
+        lostColl.data.forEach(function(loss, i) {
+            combineColl.insert({
+                senttime: loss.senttime,
+                lost: loss
+            })
+        })
     };
 
     return parent;

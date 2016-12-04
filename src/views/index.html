@@ -8,19 +8,26 @@
     <script src="../scripts/pcapng-js/headers.js"></script>
     <script src="../scripts/PacketProcessing.js"></script>
     <script src="../scripts/graphs.js"></script>
+    <style>
+        path {
+            fill:none;
+        }
+    </style>
 </head>
 <body>
 <h1>Hello World!</h1>
 <input type="text" id="senderSelf" value="10.0.0.21" />
 <input type="text" id="senderOther" value="130.160.143.212" />
-<input type="text" id="recSelf" value="10.112.4.172" />
+<input type="text" id="recSelf" value="10.112.5.51" /> <!--4.172-->
 <input type="text" id="recOther" value="68.62.144.245" />
 <input type="file" id="fileSend" />
 <input type="file" id="fileReceive" />
 
 <h1 onclick="main()">Read me</h1>
 
-<svg id="visualisation" width="1070", height="240"></svg>
+<svg id="visualisation" width="1070" height="240"></svg>
+<svg id="inflight" width="1070" height="240"></svg>
+<svg id="seqack" width="1070" height="240"></svg>
 
 <table>
     <thead>
@@ -116,7 +123,7 @@
             "</td><td>"+data[i].sender.seq+"</td><td>"+data[i].sender.ack+"</td></tr>");
         }
 
-        process10Packets("#visualisation", srcIP, dstIP);
+        displayPackets("#visualisation", srcIP, dstIP);
 
         console.log(TV.db.getCollection('pairs').count());
     }
