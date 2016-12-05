@@ -94,7 +94,7 @@ function displayPackets(selector, sender, receiver) {
     var maxRec = 0;
     var maxAckSent = 0;
     var maxAckRec = 0;
-    var tempCollection = TV.db.addCollection('temp');
+    var tempCollection = TV.db.addCollection('temp', {indices:['x']});
     combined.forEach(function(blob, i) {
         if ("pair" in blob) {
             var packet = blob.pair;
@@ -154,6 +154,7 @@ function displayPackets(selector, sender, receiver) {
 
     });
     var tempColl = TV.db.getCollection('temp').chain().simplesort('x');
+    var maxMax = Math.max(maxSent, maxRec, maxAckRec, maxAckSent);
 
     var WIDTH = 1000,
         HEIGHT = 200,
@@ -198,7 +199,7 @@ function displayPackets(selector, sender, receiver) {
         .attr('d', lineGen);
 
     var pointsMain = vis.selectAll('.dots')
-        .data(tofromLostSeries)
+        .data(lostOnly)
         .enter()
         .append("g")
         .attr("class", "dots")
@@ -250,7 +251,7 @@ function displayPackets(selector, sender, receiver) {
         .attr('d', lineGen2);
 
     //SeqAck graph
-    var yScale3 = d3.scale.linear().range([HEIGHT-MARGINS.top, MARGINS.bottom]).domain([0,Math.max(maxSent, maxRec, maxAckRec, maxAckSent)]);
+    var yScale3 = d3.scale.linear().range([HEIGHT-MARGINS.top, MARGINS.bottom]).domain([0,maxMax]);
     var yAxis3 = d3.svg.axis().scale(yScale3).orient("left");
 
     var seqAckVis = d3.select('#seqack').call(zoom).append("svg")
@@ -286,9 +287,10 @@ function displayPackets(selector, sender, receiver) {
         inflight.selectAll('path.line').attr('d', lineGen2);
 
         var scale = xScale.domain();
-        var combFilter = tempColl.copy().find({x: {'$gte': scale[0]}}).find({x: {'$lte': scale[1]}}).data();
-        var yMin = combFilter[0].y - 100;
-        var yMax = combFilter[combFilter.length-1].y + 100;
+        var combBottom = tempColl.copy().find({x:{'$gte': scale[0]}}, true).data();
+        var combTop = tempColl.copy().find({x:{'$gte':scale[1]}}, true).data();
+        var yMin = (combBottom.length>0)?combBottom[0].y - 100:0;
+        var yMax = (combTop.length>0)?combTop[0].y + 100:maxMax;
         yScale3.domain([yMin, yMax]);
         seqAckVis.select(".x.axis").call(xAxis);
         seqAckVis.select(".y.axis").call(yAxis3);
