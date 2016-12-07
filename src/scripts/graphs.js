@@ -167,12 +167,25 @@ function displayPackets(selector, sender, receiver) {
 
     //shared
     var xScale = d3.scale.linear().range([MARGINS.left, WIDTH-MARGINS.right]).domain([min, max]);
-    var xAxis = d3.svg.axis().scale(xScale);
+    var xAxis = d3.svg.axis().scale(xScale).tickFormat(tickFormatter);
     var zoom = d3.behavior.zoom().x(xScale)/*.y(yScale)*//*.scaleExtent([1,10])*/.on("zoom", zoomed);
+
+    Number.round = function(places) {
+        return +(Math.round(this + "e+" + places) + "e-" + places);
+    };
+    function tickFormatter(d) {
+        return d.toExponential(2);
+    }
 
     //Main graph
     var yScale = d3.scale.linear().range([HEIGHT-MARGINS.top, MARGINS.bottom]).domain([0,1]);
-    var yAxis = d3.svg.axis().scale(yScale).orient("left");
+    var yAxis = d3.svg.axis().scale(yScale).orient("left").tickFormat(mainTickFormatter);
+
+    function mainTickFormatter(d) {
+        if (d==0) return "Sender";
+        if (d==1) return "Receiver";
+        return "";
+    }
 
     var vis = d3.select(selector).call(zoom).append("svg")
         .call(zoom)
